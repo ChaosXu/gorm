@@ -2,6 +2,7 @@ package gorm
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"errors"
@@ -24,6 +25,7 @@ type Scope struct {
 	skipLeft        bool
 	fields          *[]*Field
 	selectAttrs     *[]string
+	ctx             context.Context
 }
 
 // IndirectValue return scope's reflect value's indirect value
@@ -423,6 +425,11 @@ func (scope *Scope) CommitOrRollback() *Scope {
 		}
 	}
 	return scope
+}
+
+// GetContext return the context of the scope
+func (scope *Scope) GetContext() context.Context {
+	return scope.ctx
 }
 
 ////////////////////////////////////////////////////////////////////////////////

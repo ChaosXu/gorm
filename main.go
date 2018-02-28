@@ -1,6 +1,7 @@
 package gorm
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -163,9 +164,14 @@ func (s *DB) SingularTable(enable bool) {
 
 // NewScope create a scope for current operation
 func (s *DB) NewScope(value interface{}) *Scope {
+	return s.NewScopeCtx(context.TODO(), value)
+}
+
+// NewScopeCtx create a scope for current operation with the context
+func (s *DB) NewScopeCtx(ctx context.Context, value interface{}) *Scope {
 	dbClone := s.clone()
 	dbClone.Value = value
-	return &Scope{db: dbClone, Search: dbClone.search.clone(), Value: value}
+	return &Scope{db: dbClone, Search: dbClone.search.clone(), Value: value, ctx: ctx}
 }
 
 // QueryExpr returns the query as expr object
@@ -415,7 +421,12 @@ func (s *DB) UpdateColumns(values interface{}) *DB {
 
 // Save update value in database, if the value doesn't have primary key, will insert it
 func (s *DB) Save(value interface{}) *DB {
-	scope := s.NewScope(value)
+	return s.SaveCtx(context.TODO(), value)
+}
+
+// Save update value in database with the context, if the value doesn't have primary key, will insert it
+func (s *DB) SaveCtx(ctx context.Context, value interface{}) *DB {
+	scope := s.NewScopeCtx(ctx, value)
 	if !scope.PrimaryKeyZero() {
 		newDB := scope.callCallbacks(s.parent.callbacks.updates).db
 		if newDB.Error == nil && newDB.RowsAffected == 0 {
@@ -428,13 +439,23 @@ func (s *DB) Save(value interface{}) *DB {
 
 // Create insert the value into database
 func (s *DB) Create(value interface{}) *DB {
-	scope := s.NewScope(value)
+	return s.CreateCtx(context.TODO(), value)
+}
+
+// CreateCtx insert the value into database with the context
+func (s *DB) CreateCtx(ctx context.Context, value interface{}) *DB {
+	scope := s.NewScopeCtx(ctx, value)
 	return scope.callCallbacks(s.parent.callbacks.creates).db
 }
 
 // Delete delete value match given conditions, if the value has primary key, then will including the primary key as condition
 func (s *DB) Delete(value interface{}, where ...interface{}) *DB {
-	return s.NewScope(value).inlineCondition(where...).callCallbacks(s.parent.callbacks.deletes).db
+	return s.DeleteCtx(context.TODO(), value, where...)
+}
+
+// DeleteCtx delete value match given conditions, if the value has primary key, then will including the primary key as condition
+func (s *DB) DeleteCtx(ctx context.Context, value interface{}, where ...interface{}) *DB {
+	return s.NewScopeCtx(ctx, value).inlineCondition(where...).callCallbacks(s.parent.callbacks.deletes).db
 }
 
 // Raw use raw sql as conditions, won't run it unless invoked by other methods

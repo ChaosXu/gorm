@@ -7,8 +7,11 @@ import "time"
 //      gorm.Model
 //    }
 type Model struct {
-	ID        uint `gorm:"primary_key"`
+	ID        uint   `gorm:"primary_key"`
+	CreatedBy string `gorm:"size:50"`
 	CreatedAt time.Time
+	UpdatedBy string `gorm:"size:50"`
 	UpdatedAt time.Time
+	DeletedBy string     `gorm:"size:50"`
 	DeletedAt *time.Time `sql:"index"`
 }
